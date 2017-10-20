@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+  name: kafka2-external
+  labels:
+    service: kafka2-external
+spec:
+  ports:
+    - name: broker
+      port: 9092
+      targetPort: 9092
+  type: LoadBalancer
+  selector:
+    app: kafka
+    brokerId: "2"

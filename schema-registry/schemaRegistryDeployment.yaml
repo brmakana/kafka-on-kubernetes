@@ -1,0 +1,37 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: schemaregistry-deployment
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: schemaregistry
+    spec:
+      containers:
+      - name: schemaregistry
+        image: confluentinc/cp-schema-registry:3.3.0
+        ports:
+        - containerPort: 80
+        env:
+        - name: SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL
+          valueFrom:
+            configMapKeyRef:
+              name: schemaregistry-config
+              key: SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL
+        - name: SCHEMA_REGISTRY_HOST_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: schemaregistry-config
+              key: SCHEMA_REGISTRY_HOST_NAME 
+        - name: SCHEMA_REGISTRY_LISTENERS
+          valueFrom:
+            configMapKeyRef:
+              name: schemaregistry-config
+              key: SCHEMA_REGISTRY_LISTENERS
+        - name: SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS
+          valueFrom:
+            configMapKeyRef:
+              name: schemaregistry-config
+              key: SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS

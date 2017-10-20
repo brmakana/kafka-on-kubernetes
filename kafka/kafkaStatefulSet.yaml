@@ -1,0 +1,73 @@
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: kafka
+spec:
+  serviceName: "kafka"
+  replicas: 5
+  template:
+    metadata:
+      labels:
+        app: kafka
+      annotations:
+        pod.alpha.kubernetes.io/initialized: "true"
+        scheduler.alpha.kubernetes.io/affinity: >
+            {
+              "podAntiAffinity": {
+                "requiredDuringSchedulingRequiredDuringExecution": [{
+                  "labelSelector": {
+                    "matchExpressions": [{
+                      "key": "app",
+                      "operator": "In",
+                      "values": ["kafka"]
+                    }]
+                  },
+                  "topologyKey": "kubernetes.io/hostname"
+                }]
+              }
+            }
+    spec:
+      terminationGracePeriodSeconds: 120
+      containers:
+      - name: kafka
+        image: confluentinc/cp-kafka:3.3.0
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 9092
+            name: broker
+        env:
+        - name: KAFKA_LOG_DIRS
+          value: "/var/lib/kafka/data/kafka-logs"
+        - name: KAFKA_DELETE_TOPIC_ENABLE
+          value: "true"
+        - name: KAFKA_ZOOKEEPER_CONNECT
+          value: "zookeeper:2181"      
+        - name: BASE_DOMAIN
+          valueFrom:
+            configMapKeyRef:
+              name: kafka-config
+              key: BASE_DOMAIN
+        command:
+        - sh
+        - -c
+        - "export ID=$(hostname | awk -F'-' '{print $2}') && \
+           export KAFKA_BROKER_ID=$((ID+1)) && \
+           export KAFKA_BROKER_ID=$(echo ${KAFKA_BROKER_ID} | tr -d '[:space:]') && \
+           export BROKER='broker' && \
+           export KAFKA_BROKER_HOST=${BROKER}${KAFKA_BROKER_ID}${BASE_DOMAIN} && \
+           export KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://${KAFKA_BROKER_HOST}:9092 && \
+           /etc/confluent/docker/run"
+        volumeMounts:
+        - name: kafka-data
+          mountPath: /var/lib/kafka/data
+  volumeClaimTemplates:           
+  - metadata:
+      name: kafka-data
+      annotations:
+        volume.beta.kubernetes.io/storage-class: "ebs-ssd"       
+    spec:
+      accessModes: 
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 100Gi

@@ -1,0 +1,47 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: restproxy-deployment
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: restproxy
+    spec:
+      containers:
+      - name: restproxy
+        image: confluentinc/cp-kafka-rest:3.3.0
+        ports:
+        - containerPort: 80
+        env:
+        - name: KAFKA_REST_ZOOKEEPER_CONNECT
+          valueFrom:
+            configMapKeyRef:
+              name: restproxy-config
+              key: KAFKA_REST_ZOOKEEPER_CONNECT
+        - name: KAFKA_REST_BOOTSTRAP_SERVERS
+          valueFrom:
+            configMapKeyRef:
+              name: restproxy-config
+              key: KAFKA_REST_BOOTSTRAP_SERVERS
+        - name: KAFKA_REST_HOST_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: restproxy-config
+              key: KAFKA_REST_HOST_NAME 
+        - name: KAFKA_REST_LISTENERS
+          valueFrom:
+            configMapKeyRef:
+              name: restproxy-config
+              key: KAFKA_REST_LISTENERS
+        - name: KAFKA_REST_SCHEMA_REGISTRY_URL
+          valueFrom:
+            configMapKeyRef:
+              name: restproxy-config
+              key: KAFKA_REST_SCHEMA_REGISTRY_URL             
+        - name: KAFKA_REST_HOST_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: restproxy-config
+              key: KAFKA_REST_HOST_NAME                   

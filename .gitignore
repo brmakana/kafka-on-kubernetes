@@ -1,0 +1,13 @@
+.DS_Store
+target
+*~
+.idea
+*.iml
+*.jks
+*.crt
+*creds
+*.key
+*.srl
+*.csr
+*.pem
+*.req

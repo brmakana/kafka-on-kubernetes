@@ -1,0 +1,85 @@
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: zk
+spec:
+  serviceName: zookeeper
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: zk
+      annotations:
+        pod.alpha.kubernetes.io/initialized: "true"
+        scheduler.alpha.kubernetes.io/affinity: >
+            {
+              "podAntiAffinity": {
+                "requiredDuringSchedulingRequiredDuringExecution": [{
+                  "labelSelector": {
+                    "matchExpressions": [{
+                      "key": "app",
+                      "operator": "In",
+                      "values": ["zookeeper"]
+                    }]
+                  },
+                  "topologyKey": "kubernetes.io/hostname"
+                }]
+              }
+            }
+    spec:
+      terminationGracePeriodSeconds: 120        
+      containers:
+      - name: zk
+        imagePullPolicy: Always
+        image: confluentinc/cp-zookeeper:3.3.0
+#        resources:
+#          requests:
+#            memory: "1Gi"
+#            cpu: "1"
+        ports:
+        - containerPort: 2181
+          name: client
+        - containerPort: 2888
+          name: server
+        - containerPort: 3888
+          name: leader-election
+        env:
+        - name: ZOOKEEPER_CLIENT_PORT
+          value: "2181"
+        - name: ZOOKEEPER_TICK_TIME
+          value: "2000"
+        - name: ZOOKEEPER_SYNC_LIMIT
+          value: "2"
+        - name: ZOOKEEPER_SERVERS
+          value: "zk-0.zookeeper.default.svc.cluster.local:2888:3888;zk-1.zookeeper.default.svc.cluster.local:2888:3888;zk-2.zookeeper.default.svc.cluster.local:2888:3888"
+        command:
+        - sh
+        - -c
+        - "export ID=$(hostname | awk -F'-' '{print $2}') && export ZOOKEEPER_SERVER_ID=$((ID+1)) && echo \"ID: $ID, ZK_ID: $ZOOKEEPER_SERVER_ID\" && /etc/confluent/docker/run"
+        volumeMounts:
+        - name: zk-logs
+          mountPath: /var/lib/zookeeper/log
+        - name: zk-data
+          mountPath: /var/lib/zookeeper/data          
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+  volumeClaimTemplates:
+  - metadata:
+      name: zk-logs
+      annotations:
+        volume.beta.kubernetes.io/storage-class: "ebs-ssd"
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 50Gi
+  - metadata:
+      name: zk-data
+      annotations:
+        volume.beta.kubernetes.io/storage-class: "ebs-ssd"
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 150Gi          

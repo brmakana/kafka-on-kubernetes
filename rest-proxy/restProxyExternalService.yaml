@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+  name: restproxy-external
+  labels:
+    service: restproxy-external
+spec:
+  ports:
+    - name: web
+      port: 80
+  type: LoadBalancer
+  selector:
+    app: restproxy
